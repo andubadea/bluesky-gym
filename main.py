@@ -17,7 +17,7 @@ EPOCHS = 200
 
 if __name__ == "__main__":
     # Create the environment
-    env = gym.make('HorizontalCREnv-v0', render_mode=None)
+    env = gym.make('VerticalCREnv-v0', render_mode=None)
     obs, info = env.reset()
 
     # Create the model
@@ -27,15 +27,15 @@ if __name__ == "__main__":
     if TRAIN:
         for i in range(EPOCHS):
             model.learn(total_timesteps=int(20e5/EPOCHS))
-            model.save("models/HorizontalCREnv-v0_ppo/model")
+            model.save("models/VerticalCREnv-v0_ppo/model")
         del model
     
     env.close()
     
     # Test the trained model
 
-    model = PPO.load("models/HorizontalCREnv-v0_ppo/model_10000", env=env)
-    env = gym.make('HorizontalCREnv-v0', render_mode="human")
+    # model = PPO.load("models/HorizontalCREnv-v0_ppo/model", env=env)
+    env = gym.make('VerticalCREnv-v0', render_mode="human")
 
     for i in range(EVAL_EPISODES):
         done = truncated = False
@@ -43,8 +43,8 @@ if __name__ == "__main__":
         tot_rew = 0
         while not (done or truncated):
             # Predict
-            # action = np.array([0])
-            action, _states = model.predict(obs, deterministic=True)
+            action = np.array(np.random.randint(-100,100)/1000)
+            # action, _states = model.predict(obs, deterministic=True)
             # Get reward
             obs, reward, done, truncated, info = env.step(action[()])
             tot_rew += reward
