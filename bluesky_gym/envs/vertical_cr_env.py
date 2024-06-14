@@ -10,12 +10,13 @@ from gymnasium import spaces
 
 
 DISTANCE_MARGIN = 5 # km
+NM2KM = 1.852
 
 INTRUSION_PENALTY = -1
 
 NUM_INTRUDERS = 3
 INTRUSION_DISTANCE = 5 # NM
-VERTICAL_MARGIN = 2000 # ft
+VERTICAL_MARGIN = 1000 * 0.3048 # ft
 
 # Define constants
 ALT_MEAN = 1500
@@ -205,12 +206,24 @@ class VerticalCREnv(gym.Env):
     def _get_reward(self):
 
         # reward part of the function
+        int_penalty = self._check_intrusion()
         if self.runway_distance > 0 and self.altitude > 0:
-            return abs(self.target_alt - self.altitude) * ALT_DIF_REWARD_SCALE, 0
+            return abs(self.target_alt - self.altitude) * ALT_DIF_REWARD_SCALE + int_penalty, 0
         elif self.altitude <= 0:
-            return CRASH_PENALTY, 1
+            return CRASH_PENALTY + int_penalty, 1
         elif self.runway_distance <= 0:
-            return self.altitude * RWY_ALT_DIF_REWARD_SCALE, 1
+            return self.altitude * RWY_ALT_DIF_REWARD_SCALE + int_penalty, 1
+
+    def _check_intrusion(self):
+        ac_idx = bs.traf.id2idx('KL001')
+        reward = 0
+        for i in range(NUM_INTRUDERS):
+            int_idx = i+1
+            _, int_dis = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], bs.traf.lat[int_idx], bs.traf.lon[int_idx])
+            vert_dis = bs.traf.alt[ac_idx] - bs.traf.alt[int_idx]
+            if int_dis < INTRUSION_DISTANCE and abs(vert_dis) < VERTICAL_MARGIN:
+                reward += INTRUSION_PENALTY
+        return reward
         
     def _get_action(self,action):
         # Transform action to the meters per second
@@ -231,6 +244,8 @@ class VerticalCREnv(gym.Env):
     def reset(self, seed=None, options=None):
         
         super().reset(seed=seed)
+        bs.sim.reset()
+        bs.stack.stack('DT 1;FF')
 
         alt_init = np.random.randint(ALT_MIN, ALT_MAX)
         self.target_alt = alt_init + np.random.randint(-TARGET_ALT_DIF,TARGET_ALT_DIF)
@@ -345,7 +360,7 @@ class VerticalCREnv(gym.Env):
             width_temp = int(5+int_y_dis/20)
             aircraft_start = int(((zero_offset + int_x_dis )/max_distance)*self.window_width)
             aircraft_end = int(aircraft_start + (4/max_distance)*self.window_width)
-            color = (255,255,255) if abs(int_y_dis) > 20 else 'red'
+            color = (255,255,255) if abs(int_y_dis) > DISTANCE_MARGIN else 'red'
 
             pygame.draw.line(
                 canvas,
@@ -354,6 +369,39 @@ class VerticalCREnv(gym.Env):
                 (aircraft_end,int_alt),
                 width = width_temp
             )
+
+            hor_margin = (DISTANCE_MARGIN*NM2KM/max_distance)*self.window_width
+            ver_margin = (VERTICAL_MARGIN/max_alt)*self.window_height
+
+            pygame.draw.line(
+                canvas,
+                'black',
+                (aircraft_start-hor_margin/2,int_alt-ver_margin),
+                (aircraft_end+hor_margin/2,int_alt-ver_margin),
+                width = 1
+            )
+            pygame.draw.line(
+                canvas,
+                'black',
+                (aircraft_start-hor_margin/2,int_alt+ver_margin),
+                (aircraft_end+hor_margin/2,int_alt+ver_margin),
+                width = 1
+            )
+            pygame.draw.line(
+                canvas,
+                'black',
+                (aircraft_start-hor_margin/2,int_alt-ver_margin),
+                (aircraft_start-hor_margin/2,int_alt+ver_margin),
+                width = 1
+            )
+            pygame.draw.line(
+                canvas,
+                'black',
+                (aircraft_end+hor_margin/2,int_alt-ver_margin),
+                (aircraft_end+hor_margin/2,int_alt+ver_margin),
+                width = 1
+            )
+
 
 
         self.window.blit(canvas, canvas.get_rect())
