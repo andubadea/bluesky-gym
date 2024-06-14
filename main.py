@@ -9,9 +9,12 @@ import numpy as np
 import bluesky_gym
 import bluesky_gym.envs
 
+import pygame
+from pygame.locals import *
+
 bluesky_gym.register_envs()
 
-TRAIN = False
+TRAIN = True
 EVAL_EPISODES = 10
 EPOCHS = 200
 
@@ -43,8 +46,18 @@ if __name__ == "__main__":
         tot_rew = 0
         while not (done or truncated):
             # Predict
-            action = np.array(np.random.randint(-100,100)/1000)
-            # action, _states = model.predict(obs, deterministic=True)
+            # events = pygame.event.get()
+            # keys = pygame.key.get_pressed()
+
+            # if keys[K_UP]:
+            #     action = np.array([1.0])
+            # elif keys[K_DOWN]:
+            #     action = np.array([-1.0])
+            # else:
+            #     action = np.array([-0.1])
+
+            # action = np.array(np.random.randint(-100,100)/1000)
+            action, _states = model.predict(obs, deterministic=True)
             # Get reward
             obs, reward, done, truncated, info = env.step(action[()])
             tot_rew += reward
