@@ -12,7 +12,7 @@ from gymnasium import spaces
 DISTANCE_MARGIN = 5 # km
 NM2KM = 1.852
 
-INTRUSION_PENALTY = -1
+INTRUSION_PENALTY = -50
 
 NUM_INTRUDERS = 3
 INTRUSION_DISTANCE = 5 # NM
@@ -190,7 +190,6 @@ class VerticalCREnv(gym.Env):
             tlosv = 100000000000.
 
             bs.traf.creconfs(acid=f'{i}',actype="A320",targetidx=target_idx,dpsi=dpsi,dcpa=cpa,tlosh=tlosh,dH=dH,tlosv=tlosv)
-            print(i, target_idx)
             bs.traf.alt[i+1] = bs.traf.alt[target_idx] + dH
             bs.traf.ap.selaltcmd(i+1, bs.traf.alt[target_idx] + dH, 0)
             
@@ -244,8 +243,8 @@ class VerticalCREnv(gym.Env):
     def reset(self, seed=None, options=None):
         
         super().reset(seed=seed)
-        bs.sim.reset()
-        bs.stack.stack('DT 1;FF')
+        bs.traf.reset()
+        # bs.stack.stack('DT 1;FF')
 
         alt_init = np.random.randint(ALT_MIN, ALT_MAX)
         self.target_alt = alt_init + np.random.randint(-TARGET_ALT_DIF,TARGET_ALT_DIF)
