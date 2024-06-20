@@ -3,7 +3,7 @@ This file trains a model using the HorizontalCREnv-V0 environment
 """
 
 import gymnasium as gym
-from stable_baselines3 import PPO
+from stable_baselines3 import SAC
 import numpy as np
 
 import bluesky_gym
@@ -14,7 +14,7 @@ from pygame.locals import *
 
 bluesky_gym.register_envs()
 
-TRAIN = True
+TRAIN = False
 EVAL_EPISODES = 10
 EPOCHS = 200
 
@@ -24,20 +24,22 @@ if __name__ == "__main__":
     obs, info = env.reset()
 
     # Create the model
-    model = PPO("MultiInputPolicy", env, verbose=1,learning_rate=3e-4)
+    model = SAC("MultiInputPolicy", env, verbose=1,learning_rate=3e-3)
 
     # Train the model
     if TRAIN:
-        for i in range(EPOCHS):
-            model.learn(total_timesteps=int(20e5/EPOCHS))
-            model.save("models/VerticalCREnv-v0_ppo/model")
+        model.learn(total_timesteps=int(2e5))
+        model.save("models/VerticalCREnv-v0_sac/model")
+        # for i in range(EPOCHS):
+        #     model.learn(total_timesteps=int(20e5/EPOCHS))
+        #     model.save("models/VerticalCREnv-v0_sac/model")
         del model
     
     env.close()
     
     # Test the trained model
 
-    # model = PPO.load("models/HorizontalCREnv-v0_ppo/model", env=env)
+    model = SAC.load("models/VerticalCREnv-v0_sac/model", env=env)
     env = gym.make('VerticalCREnv-v0', render_mode="human")
 
     for i in range(EVAL_EPISODES):
