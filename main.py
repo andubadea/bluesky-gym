@@ -1,5 +1,5 @@
 """
-This file trains a model using the StaticObstacleCREnv-V0 environment
+This file trains a model using the StaticObstacleCRwithIntrudersEnv-V0 environment
 """
 
 import gymnasium as gym
@@ -17,7 +17,7 @@ EPOCHS = 200
 
 if __name__ == "__main__":
     # Create the environment
-    env = gym.make('StaticObstacleCREnv-v0', render_mode='human')
+    env = gym.make('StaticObstacleCRwithIntrudersEnv-v0', render_mode='human')
 
     # obs, info = env.reset()
 
@@ -28,15 +28,15 @@ if __name__ == "__main__":
     if TRAIN:
         for i in range(EPOCHS):
             model.learn(total_timesteps=int(20e5/EPOCHS))
-            model.save("models/StaticObstacleCREnv-v0_ppo/model")
+            model.save("models/StaticObstacleCRwithIntrudersEnv-v0_ppo/model")
         del model
     
     env.close()
     
     # Test the trained model
 
-    model = PPO.load("models/StaticObstacleCREnv-v0_ppo/model_10000", env=env)
-    env = gym.make('StaticObstacleCREnv-v0', render_mode="human")
+    model = PPO.load("models/StaticObstacleCRwithIntrudersEnv-v0_ppo/model_10000", env=env)
+    env = gym.make('StaticObstacleCRwithIntrudersEnv-v0', render_mode="human")
 
     for i in range(EVAL_EPISODES):
         done = truncated = False
