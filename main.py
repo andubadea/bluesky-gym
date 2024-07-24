@@ -1,57 +1,59 @@
 """
-This file trains a model using the StaticObstacleCRwithIntrudersEnv-V0 environment
+This file is an example train and test loop for the different environments.
+Selecting different environments is done through setting the 'env_name' variable.
+
+TODO:
+* add rgb_array rendering for the different environments to allow saving videos
 """
 
 import gymnasium as gym
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC, TD3, DDPG
+
 import numpy as np
 
 import bluesky_gym
 import bluesky_gym.envs
 
+from scripts.common import logger
+
 bluesky_gym.register_envs()
+
+env_name = 'StaticObstacleCREnv-v0'
+algorithm = PPO
+
+# Initialize logger
+log_dir = f'./logs/{env_name}/'
+file_name = f'{env_name}_{str(algorithm.__name__)}.csv'
+csv_logger_callback = logger.CSVLoggerCallback(log_dir, file_name)
 
 TRAIN = True
 EVAL_EPISODES = 10
 EPOCHS = 200
 
+
 if __name__ == "__main__":
-    # Create the environment
-    env = gym.make('StaticObstacleCRwithIntrudersEnv-v0', render_mode='human')
-
-    # obs, info = env.reset()
-
-    # Create the model
-    model = PPO("MultiInputPolicy", env, verbose=1,learning_rate=3e-4)
-
-    # Train the model
+    env = gym.make(env_name, render_mode='human')
+    obs, info = env.reset()
+    model = algorithm("MultiInputPolicy", env, verbose=1,learning_rate=3e-4)
     if TRAIN:
-        for i in range(EPOCHS):
-            model.learn(total_timesteps=int(20e5/EPOCHS))
-            model.save("models/StaticObstacleCRwithIntrudersEnv-v0_ppo/model")
+        model.learn(total_timesteps=2e6, callback=csv_logger_callback)
+        model.save(f"models/{env_name}_{str(algorithm.__name__)}/model")
         del model
-    
     env.close()
     
     # Test the trained model
-
-    model = PPO.load("models/StaticObstacleCRwithIntrudersEnv-v0_ppo/model_10000", env=env)
-    env = gym.make('StaticObstacleCRwithIntrudersEnv-v0', render_mode="human")
-
+    model = algorithm.load(f"models/{env_name}_{str(algorithm.__name__)}/model", env=env)
+    env = gym.make(env_name, render_mode="human")
     for i in range(EVAL_EPISODES):
+
         done = truncated = False
         obs, info = env.reset()
         tot_rew = 0
         while not (done or truncated):
-            # Predict
-            # action = np.array([0])
-            # action = input()
+            # action = np.array(np.random.randint(-100,100,size=(2))/100)
+            # action = np.array([0,-1])
             action, _states = model.predict(obs, deterministic=True)
-            # Get reward
             obs, reward, done, truncated, info = env.step(action[()])
             tot_rew += reward
-
         print(tot_rew)
-
-
     env.close()
