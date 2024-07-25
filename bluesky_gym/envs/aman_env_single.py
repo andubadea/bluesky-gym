@@ -274,7 +274,6 @@ class AmanEnvS(gym.Env):
         index = 0
         for distance in self.waypoint_distance:
             if distance < DISTANCE_MARGIN and self.wpt_reach[index] != 1:
-                self.wpt_reach[index] = 50
                 # bs.traf.delete(0)
                 bs.stack.stack(f"KL001 delrte")
                 f"KL001 addwpt {RWY_LAT} {RWY_LON}"
