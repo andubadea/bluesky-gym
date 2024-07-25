@@ -277,11 +277,12 @@ class AmanEnvS(gym.Env):
                 # bs.traf.delete(0)
                 bs.stack.stack(f"KL001 delrte")
                 f"KL001 addwpt {RWY_LAT} {RWY_LON}"
-                # reward += REACH_REWARD
-                index += 1
+                reward += REACH_REWARD
+                self.wpt_reach[index] = 1
+                index+=1
             else:
                 reward += 0
-                index += 1
+                index+=1
         return reward
 
     def _check_drift(self):
