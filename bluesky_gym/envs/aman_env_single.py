@@ -31,7 +31,7 @@ NM2KM = 1.852
 
 ACTION_FREQUENCY = 10
 
-NUM_AC = 15
+NUM_AC = 5
 NUM_WAYPOINTS = 1
 
 # Final approach fix, north of EHAM in Heiloo
@@ -261,7 +261,7 @@ class AmanEnvS(gym.Env):
         reward = drift_reward + intrusion_reward
         # reward = intrusion_reward
 
-        if 0 in self.wpt_reach:
+        if self.wpt_reach[0]==0:
             self.total_reward+=0
             return reward, 0
         else:
