@@ -36,9 +36,9 @@ def gray(text):
 DISTANCE_MARGIN = 5 # km
 REACH_REWARD = 1 # reach set waypoint
 
-DRIFT_PENALTY = -0.1
-AC_INTRUSION_PENALTY = -1 
-RESTRICTED_AREA_INTRUSION_PENALTY = -1
+DRIFT_PENALTY = -0.01
+AC_INTRUSION_PENALTY = -5
+RESTRICTED_AREA_INTRUSION_PENALTY = -5
 
 NUM_INTRUDERS = 5
 INTRUSION_DISTANCE = 5 # NM
@@ -53,12 +53,13 @@ OTHER_AC_DISTANCE_MIN = 50 # KM
 OTHER_AC_DISTANCE_MAX = 170 # KM
 
 D_HEADING = 45 #degrees
-D_SPEED = 20 # kts (check)
+D_SPEED = 20/3 # kts (check)
 
 AC_SPD = 150 # kts
+ALTITUDE = 350 # In FL
 
 NM2KM = 1.852
-KTS2MS = 1.94384
+MpS2Kt = 1.94384
 
 ACTION_FREQUENCY = 10
 
@@ -117,7 +118,15 @@ class StaticObstacleCREnv(gym.Env):
 
         # initialize dummy screen and set correct sim speed
         bs.scr = ScreenDummy()
-        bs.stack.stack('DT 5;FF')
+        bs.stack.stack('DT 1;FF')
+        
+        # variables for logging
+        self.total_reward = 0
+        self.waypoint_reached = 0
+        self.crashed = 0
+        self.average_drift = np.array([])
+
+        self.obstacle_names = []
 
         self.window = None
         self.clock = None
@@ -128,7 +137,15 @@ class StaticObstacleCREnv(gym.Env):
         bs.traf.reset()
         self.counter = 0
 
-        bs.traf.cre('KL001',actype="A320",acspd=AC_SPD)
+        # reset logging variables 
+        self.total_reward = 0
+        self.waypoint_reached = 0
+        self.crashed = 0
+        self.average_drift = np.array([])
+
+        # bs.tools.areafilter.deleteArea(self.poly_name)
+
+        bs.traf.cre('KL001',actype="A320",acspd=AC_SPD, acalt=ALTITUDE)
 
         # defining screen coordinates
         # defining the reference point as the top left corner of the SQUARE screen
@@ -144,6 +161,11 @@ class StaticObstacleCREnv(gym.Env):
         self._generate_other_aircraft()
 
         self._generate_waypoint()
+
+        ac_idx = bs.traf.id2idx('KL001')
+        self.initial_wpt_qdr, _ = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], self.wpt_lat[0], self.wpt_lon[0])
+        bs.traf.hdg[ac_idx] = self.initial_wpt_qdr
+        bs.traf.ap.trk[ac_idx] = self.initial_wpt_qdr
 
         self._path_planning()
 
@@ -164,22 +186,21 @@ class StaticObstacleCREnv(gym.Env):
         for i in range(action_frequency):
             bs.sim.step()
             if self.render_mode == "human":
-                observation = self._get_obs()
                 self._render_frame()
+            reward, done, terminated = self._get_reward()
+            if terminated:
+                observation = self._get_obs()
+                info = self._get_info()
+                self.total_reward += reward
+                return observation, reward, terminated, False, info
 
         observation = self._get_obs()
-        reward, terminated = self._get_reward()
-
+        reward, done, terminated = self._get_reward()
+        self.total_reward += reward
         info = self._get_info()
-
-        # bluesky reset?? bs.sim.reset() or bs.traf.reset()
-        if terminated:
-            for acid in bs.traf.id:
-                idx = bs.traf.id2idx(acid)
-                bs.traf.delete(idx)
-
-        return observation, reward, terminated, False, info
-
+        red(info)
+        return observation, reward, done, terminated, info
+    
     def _generate_other_aircraft(self, acid_actor = 'KL001', num_other_aircraft = NUM_OTHER_AIRCRAFT):
         self.other_aircraft_names = []
         for i in range(num_other_aircraft): 
@@ -226,7 +247,7 @@ class StaticObstacleCREnv(gym.Env):
                     raise Exception("No aircraft can be generated outside the obstacles. Check the parameters of the obstacles in the definition of the scenario.")
 
     def _generate_polygon(self, centre):
-        poly_area = np.random.randint(POLY_AREA_RANGE[0], POLY_AREA_RANGE[1])
+        poly_area = np.random.randint(POLY_AREA_RANGE[0]*2, POLY_AREA_RANGE[1])
         R = np.sqrt(poly_area/ np.pi)
         p = [fn.random_point_on_circle(R) for _ in range(3)] # 3 random points to start building the polygon
         p = fn.sort_points_clockwise(p)
@@ -246,6 +267,8 @@ class StaticObstacleCREnv(gym.Env):
         return p_area, p, R
     
     def _generate_obstacles(self):
+        for name in self.obstacle_names:
+            bs.tools.areafilter.deleteArea(name)
         self.obstacle_names = []
         self.obstacle_vertices = []
         self.obstacle_radius = []
@@ -368,8 +391,8 @@ class StaticObstacleCREnv(gym.Env):
             pickle.dump([obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7], f)
 
         # Getting back the objects:
-        with open('objs-bugs-v5.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
-            obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7 = pickle.load(f)
+        # with open('objs-bugs-v5.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
+        #     obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7 = pickle.load(f)
 
         self.planned_path_other_aircraft = []
 
@@ -483,7 +506,7 @@ class StaticObstacleCREnv(gym.Env):
                 "destination_waypoint_cos_drift": np.array(self.destination_waypoint_cos_drift),
                 "destination_waypoint_sin_drift": np.array(self.destination_waypoint_sin_drift),
                 # observations on obstacles
-                "restricted_area_radius": np.array(self.obstacle_radius)/WAYPOINT_DISTANCE_MAX,
+                "restricted_area_radius": np.array(self.obstacle_radius)/(POLY_AREA_RANGE[0]),
                 "restricted_area_distance": np.array(self.obstacle_centre_distance)/WAYPOINT_DISTANCE_MAX,
                 "cos_difference_restricted_area_pos": np.array(self.obstacle_centre_cos_bearing),
                 "sin_difference_restricted_area_pos": np.array(self.obstacle_centre_sin_bearing),
@@ -496,7 +519,10 @@ class StaticObstacleCREnv(gym.Env):
         # but that should not be used by the agent for decision making, so used for logging and debugging purposes
         # for now just have 10, because it crashed if I gave none for some reason.
         return {
-            "distance": 10
+            'total_reward': self.total_reward,
+            'waypoint_reached': self.waypoint_reached,
+            'crashed': self.crashed,
+            'average_drift': self.average_drift.mean()
         }
 
     def _get_reward(self):
@@ -507,20 +533,24 @@ class StaticObstacleCREnv(gym.Env):
         reach_reward = self._check_waypoint()
         drift_reward = self._check_drift()
         intrusion_other_ac_reward = self._check_intrusion_other_ac()
-        intrusion_reward = self._check_intrusion()
+        intrusion_reward, intrusion_terminate = self._check_intrusion()
 
         total_reward = reach_reward + drift_reward + intrusion_other_ac_reward + intrusion_reward
 
-        if self.wpt_reach[0] == 0:
-            return total_reward, 0
-        else:
-            return total_reward, 1
+        done = 0
+        if self.wpt_reach[0] == 1:
+            done = 1
+        elif intrusion_terminate:
+            done = 1
+
+        return total_reward, done, False
     
     def _check_waypoint(self):
         reward = 0
         index = 0
         for distance in self.destination_waypoint_distance:
             if distance < DISTANCE_MARGIN and self.wpt_reach[index] != 1:
+                self.waypoint_reached = 1
                 self.wpt_reach[index] = 1
                 reward += REACH_REWARD
                 index += 1
@@ -538,8 +568,10 @@ class StaticObstacleCREnv(gym.Env):
         return reward
 
     def _check_drift(self):
-        return abs(np.deg2rad(self.destination_waypoint_drift[0])) * DRIFT_PENALTY
-
+        drift = abs(np.deg2rad(self.destination_waypoint_drift[0]))
+        self.average_drift = np.append(self.average_drift, drift)
+        return drift * DRIFT_PENALTY
+    
     def _check_intrusion_other_ac(self):
         ac_idx = bs.traf.id2idx('KL001')
         reward = 0
@@ -548,26 +580,29 @@ class StaticObstacleCREnv(gym.Env):
             _, int_dis = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], bs.traf.lat[int_idx], bs.traf.lon[int_idx])
             if int_dis < INTRUSION_DISTANCE:
                 reward += AC_INTRUSION_PENALTY
-        
         return reward
 
     def _check_intrusion(self):
         ac_idx = bs.traf.id2idx('KL001')
         reward = 0
+        terminate = 0
         for obs_idx in range(NUM_OBSTACLES):
-            _, int_dis = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], self.obstacle_centre_lat[obs_idx], self.obstacle_centre_lon[obs_idx])
-            if int_dis < INTRUSION_DISTANCE:
+            # _, int_dis = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], self.obstacle_centre_lat[obs_idx], self.obstacle_centre_lon[obs_idx])
+            # if int_dis < INTRUSION_DISTANCE:
+            if bs.tools.areafilter.checkInside(self.obstacle_names[obs_idx], np.array([bs.traf.lat[ac_idx]]), np.array([bs.traf.lon[ac_idx]]), np.array([bs.traf.alt[ac_idx]])):
                 reward += RESTRICTED_AREA_INTRUSION_PENALTY
-        
-        return reward
-
+                self.crashed = 1
+                terminate = 1
+        return reward, terminate
 
     def _get_action(self,action):
-            
-            action_hdg = self.ac_hdg + action[0] * D_HEADING
-            action_spd = self.ac_tas/KTS2MS + action[1] * D_SPEED
-            bs.stack.stack(f"HDG KL001 {action_hdg}")
-            bs.stack.stack(f"SPD KL001 {action_spd}")
+        dh = action[0] * D_HEADING
+        dv = action[1] * D_SPEED
+        heading_new = fn.bound_angle_positive_negative_180(bs.traf.hdg[bs.traf.id2idx('KL001')] + dh)
+        speed_new = (bs.traf.tas[bs.traf.id2idx('KL001')] + dv) * MpS2Kt
+
+        bs.stack.stack(f"HDG {'KL001'} {heading_new}")
+        bs.stack.stack(f"SPD {'KL001'} {speed_new}")
 
     def _render_frame(self):
         if self.window is None and self.render_mode == "human":
@@ -583,6 +618,8 @@ class StaticObstacleCREnv(gym.Env):
 
         canvas = pygame.Surface(self.window_size)
         canvas.fill((135,206,235))
+
+        px_per_km = self.window_width/MAX_DISTANCE
 
         # draw ownship
         ac_idx = bs.traf.id2idx('KL001')
@@ -605,9 +642,9 @@ class StaticObstacleCREnv(gym.Env):
 
         pygame.draw.line(canvas,
             (235, 52, 52),
-            (x_actor-heading_end_x/2, y_actor),
-            (x_actor+heading_end_x/2, y_actor),
-            width = 4
+            (x_actor, y_actor),
+            (x_actor+heading_end_x, y_actor-heading_end_y),
+            width = 5
         )
 
         # draw heading line
@@ -700,7 +737,7 @@ class StaticObstacleCREnv(gym.Env):
 
             if reach:
                 color = (155,155,155)
-                color_actor_target = (18, 14, 120)
+                color_actor_target = (5, 128, 9)
             else:
                 color = (255,255,255)
                 color_actor_target = (235, 52, 52)
@@ -730,6 +767,9 @@ class StaticObstacleCREnv(gym.Env):
         
         self.clock.tick(self.metadata["render_fps"])
         # pygame.time.wait(10**5)
+
+        if self.counter == 1:
+            pygame.time.wait(100)
 
     def close(self):
         pass

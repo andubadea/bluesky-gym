@@ -33,7 +33,7 @@ EPOCHS = 200
 
 if __name__ == "__main__":
     env = gym.make(env_name, render_mode='human')
-    obs, info = env.reset()
+    # obs, info = env.reset()
     model = algorithm("MultiInputPolicy", env, verbose=1,learning_rate=3e-4)
     if TRAIN:
         model.learn(total_timesteps=2e6, callback=csv_logger_callback)
