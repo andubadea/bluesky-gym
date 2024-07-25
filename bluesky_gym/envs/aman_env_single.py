@@ -75,7 +75,7 @@ class AmanEnvS(gym.Env):
                 # "waypoint_distance": spaces.Box(-np.inf, np.inf, shape = (NUM_AC,), dtype=np.float64),
                 "cos_drift": spaces.Box(-np.inf, np.inf, shape = (1,), dtype=np.float64),
                 "sin_drift": spaces.Box(-np.inf, np.inf, shape = (1,), dtype=np.float64),
-                "faf_distance": spaces.Box(-np.inf, np.inf, shape = (NUM_AC,), dtype=np.float64)
+                # "faf_distance": spaces.Box(-np.inf, np.inf, shape = (NUM_AC,), dtype=np.float64)
             }
         )
        
@@ -241,7 +241,7 @@ class AmanEnvS(gym.Env):
                 # "waypoint_distance": np.array(self.waypoint_distance)/WAYPOINT_DISTANCE_MAX,
                 "cos_drift": np.array([self.cos_drift[0]]),
                 "sin_drift": np.array([self.sin_drift[0]]),
-                "faf_distance": np.array(self.faf_distance)/WAYPOINT_DISTANCE_MAX
+                # "faf_distance": np.array(self.faf_distance)/WAYPOINT_DISTANCE_MAX
             }
         # import code
         # code.interact(local=locals())
@@ -250,7 +250,7 @@ class AmanEnvS(gym.Env):
     def _get_info(self):
         return {
             "total_reward": self.total_reward,
-            "reached": self.wpt_reach
+            "reached": self.wpt_reach,
         }
 
     def _get_reward(self):
@@ -303,7 +303,7 @@ class AmanEnvS(gym.Env):
             int_idx = i
             _, rwy_dis = bs.tools.geo.kwikqdrdist(self.faf_lat, self.faf_lon, bs.traf.lat[int_idx], bs.traf.lon[int_idx])
             if rwy_dis < INTRUSION_DISTANCE:
-                reward +=100
+                # reward +=100
                 self.terminated[i] = True
         # return reward
     
