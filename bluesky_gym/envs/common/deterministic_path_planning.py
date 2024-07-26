@@ -28,6 +28,30 @@ import numpy as np
 from bluesky_gym.envs.common.tools_deterministic_path_planning import Pos, LatLon2XY, XY2LatLon, processread,Obs,parse,obsReader,\
 Route,wyptannotate,callWinds,intersectionpt,specifywindfield
 
+def black(text):
+    print('\033[30m', text, '\033[0m', sep='')
+
+def red(text):
+    print('\033[31m', text, '\033[0m', sep='')
+
+def green(text):
+    print('\033[32m', text, '\033[0m', sep='')
+
+def yellow(text):
+    print('\033[33m', text, '\033[0m', sep='')
+
+def blue(text):
+    print('\033[34m', text, '\033[0m', sep='')
+
+def magenta(text):
+    print('\033[35m', text, '\033[0m', sep='')
+
+def cyan(text):
+    print('\033[36m', text, '\033[0m', sep='')
+
+def gray(text):
+    print('\033[90m', text, '\033[0m', sep='')
+
 #from math import degrees
 #import math.isinf as infinity
 #import random as rand
@@ -186,9 +210,14 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
     plt.ylabel('Y: position w.r.t. Equator [NM]')
 
     # for all obstacles: draw and label (with a number according to order defined)
+    sector_color = ['b', 'c', 'g', 'k', 'm', 'r', 'sienna','y', 'orange', 'pink']
+    color_counter = 0
     for cur in range(len(obsDic_xy)):
-        obsDic_xy[cur].plotter(fig,cur)
+        red(sector_color[color_counter])
+        obsDic_xy[cur].plotter(fig,cur, sector_color[color_counter])
+        color_counter += 1
 
+    print(color_counter)
     #################################################################
 
 
@@ -203,6 +232,7 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
     while len(Route.active): 
         print('length of active: ',len(Route.active))
         if len(Route.active) > 500:
+            cyan('here')
             import code
             code.interact(local= locals())
         directrtplted = 0

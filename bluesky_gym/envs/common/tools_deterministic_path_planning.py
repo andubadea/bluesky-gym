@@ -6,12 +6,36 @@ Created on Tue Jun 14 11:39:20 2016
 
 Adapted from: Daphne Rein-Weston
 """
-from math import sqrt,atan2,acos,pi
+from math import sqrt,atan2,acos,pi, isnan
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
 from bluesky_gym.envs.common.wind_field_deterministic_path_planning import Windfield
+
+def black(text):
+    print('\033[30m', text, '\033[0m', sep='')
+
+def red(text):
+    print('\033[31m', text, '\033[0m', sep='')
+
+def green(text):
+    print('\033[32m', text, '\033[0m', sep='')
+
+def yellow(text):
+    print('\033[33m', text, '\033[0m', sep='')
+
+def blue(text):
+    print('\033[34m', text, '\033[0m', sep='')
+
+def magenta(text):
+    print('\033[35m', text, '\033[0m', sep='')
+
+def cyan(text):
+    print('\033[36m', text, '\033[0m', sep='')
+
+def gray(text):
+    print('\033[90m', text, '\033[0m', sep='')
 
 # Define windfield
 
@@ -305,7 +329,7 @@ class Obs:
         # make sure there are no duplicates in altWptL
         alt = duplicatefilter(altWptR)
         return alt
-    def plotter(self,fig,number):
+    def plotter(self,fig,number, sector_color):
         #create code sequence to draw obstacles (with flexible number of vertices)
         codes = []
         codes.append(Path.MOVETO)
@@ -318,7 +342,7 @@ class Obs:
         #draw obstacle
         path = Path(self.vert, codes)
         ax = fig.axes[0]
-        patch = patches.PathPatch(path,color='orange')
+        patch = patches.PathPatch(path,color=sector_color)
         ax.add_patch(patch)
         #label obstacle (place text somewhere near middle of obstacle)
         obsX = []
@@ -409,7 +433,7 @@ class Route:
         self.end = self.waypoints[-1]
         return        
     def clean(self,obstacles):
-        # REMOVE WAYPOINTS THAT ARE INSIDE GIVEN OBSTACLE(S)    
+        # REMOVE WAYPOINTS THAT ARE INSIDE GIVEN OBSTACLE(S)
         indexRem = []
         for i in range(len(self.waypoints)):
             for testing in range(len(obstacles)):
@@ -586,14 +610,24 @@ def isInside(position,obstacle):
         vectorB = position-Pos(obstacle.vert[i+1])
         # Equation (2) of Hormann 2001 Computational Geometry publication
         # computationally expensive version of calculating winding number
+        # blue(vectorA)
+        # print(position)
+        # yellow(obstacle.vert)
+        # print(vectorA.length()) ## debugging notes in some cases this vector has value 0
+        # red(vectorB.length())
+        # print(acos((vectorA*vectorB)/(vectorA.length()*vectorB.length()))) # therefore this becomes NAN
+        # green(detSign(vectorA,vectorB))
         angle.append(acos((vectorA*vectorB)/(vectorA.length()*vectorB.length()))*detSign(vectorA,vectorB))
-    
+        if isnan(angle[-1]): # this doesn't make any physical sense. It's just a patch to see the obstacles and what is happening
+            angle[-1] = 1*detSign(vectorA,vectorB)
+
     try:
         if int(round(sum(angle)/(2*pi))) == 0:
             inside = False
         else:
             inside = True
     except:
+        # magenta('am I working here?')
         import code
         code.interact(local= locals())
     

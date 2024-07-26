@@ -379,7 +379,7 @@ class StaticObstacleCREnv(gym.Env):
         import pickle
 
         # Saving the objects:
-        with open('objs.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
+        with open('de-bugging_obstacles/objs.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
             obj0 = self.other_aircraft_names
             obj1 = bs.traf.lat
             obj2 = bs.traf.lon
@@ -391,17 +391,17 @@ class StaticObstacleCREnv(gym.Env):
             pickle.dump([obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7], f)
 
         # Getting back the objects:
-        # with open('objs-bugs-v5.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
-        #     obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7 = pickle.load(f)
+        with open('de-bugging_obstacles/objs-bugs-v7.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
+            obj0, obj1, obj2, obj3, obj4, obj5, obj6, obj7 = pickle.load(f)
 
         self.planned_path_other_aircraft = []
 
         for i in range(num_other_aircraft): 
-            ac_idx = bs.traf.id2idx(self.other_aircraft_names[i])
-            planned_path_other_aircraft = path_plan.det_path_planning(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], bs.traf.alt[ac_idx], bs.traf.tas[ac_idx]/kts, self.wpt_lat[i+1], self.wpt_lon[i+1], self.obstacle_vertices)
-            # i = 2
-            # ac_idx = bs.traf.id2idx(obj0[i])
-            # planned_path_other_aircraft = path_plan.det_path_planning(obj1[ac_idx], obj2[ac_idx], obj3[ac_idx], obj4[ac_idx]/kts, obj5[i+1], obj6[i+1], obj7)
+            # ac_idx = bs.traf.id2idx(self.other_aircraft_names[i])
+            # planned_path_other_aircraft = path_plan.det_path_planning(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], bs.traf.alt[ac_idx], bs.traf.tas[ac_idx]/kts, self.wpt_lat[i+1], self.wpt_lon[i+1], self.obstacle_vertices)
+            i = 4
+            ac_idx = bs.traf.id2idx(obj0[i])
+            planned_path_other_aircraft = path_plan.det_path_planning(obj1[ac_idx], obj2[ac_idx], obj3[ac_idx], obj4[ac_idx]/kts, obj5[i+1], obj6[i+1], obj7)
             
             self.planned_path_other_aircraft.append(planned_path_other_aircraft)
 
@@ -587,8 +587,6 @@ class StaticObstacleCREnv(gym.Env):
         reward = 0
         terminate = 0
         for obs_idx in range(NUM_OBSTACLES):
-            # _, int_dis = bs.tools.geo.kwikqdrdist(bs.traf.lat[ac_idx], bs.traf.lon[ac_idx], self.obstacle_centre_lat[obs_idx], self.obstacle_centre_lon[obs_idx])
-            # if int_dis < INTRUSION_DISTANCE:
             if bs.tools.areafilter.checkInside(self.obstacle_names[obs_idx], np.array([bs.traf.lat[ac_idx]]), np.array([bs.traf.lon[ac_idx]]), np.array([bs.traf.alt[ac_idx]])):
                 reward += RESTRICTED_AREA_INTRUSION_PENALTY
                 self.crashed = 1
