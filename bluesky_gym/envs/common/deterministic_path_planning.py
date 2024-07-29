@@ -138,7 +138,7 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
     # create obstacle dictionary (key is obstacle index)
     obsDic_xy = {i: obstacle_list_xy[i] for i in range(len(obstacle_list_xy))}
     # print(obsDic_xy)
-
+    
     # define as instance of the obstacle class
     for i in range(len(obsDic_xy)):
         obsDic_xy[i] = Obs(obsDic_xy[i])
@@ -213,11 +213,10 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
     sector_color = ['b', 'c', 'g', 'k', 'm', 'r', 'sienna','y', 'orange', 'pink']
     color_counter = 0
     for cur in range(len(obsDic_xy)):
-        red(sector_color[color_counter])
         obsDic_xy[cur].plotter(fig,cur, sector_color[color_counter])
         color_counter += 1
 
-    print(color_counter)
+    
     #################################################################
 
 
@@ -231,8 +230,10 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
 
     while len(Route.active): 
         print('length of active: ',len(Route.active))
-        if len(Route.active) > 500:
+        if len(Route.active) > 50:
             cyan('here')
+            plt.show()
+
             import code
             code.interact(local= locals())
         directrtplted = 0
@@ -257,8 +258,8 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
             parentX,parentY = list(zip(*parent.waypoints))
             plt.plot(parentX,parentY,'--')
 
-        # print('parentX', parentX)
-        # print('parentY', parentY)
+        print('parentX', parentX)
+        print('parentY', parentY)
         # if there is an incumbent... check if route length (or time) is greater than incumbent length (or time)
         if incflag==1:
             if optimizationpriority == 0:
@@ -287,7 +288,7 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
         for obstacle in range(len(obsDic_xy)):             # loop through all obstacles
             # tabulate intersections between route segments and obstacle segments
             allintersections.append(obsDic_xy[obstacle].intersectroute(parent))
-        # black(allintersections)
+        black(allintersections)
         # if there are intersections, define branching obstacle as first encountered
         if len([_f for _f in allintersections if _f]):
             # find index of obstacle in obsDic that will be encountered first
@@ -310,7 +311,7 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
             
 
             first_seg = [f for f in firstseg if isinstance(f, int)]
-            # red(firstseg)
+            red(firstseg)
             if firstseg.count(min(first_seg)) > 1:
 
                 indices = [i for i, x in enumerate(firstseg) if x == min(first_seg)]
@@ -322,11 +323,11 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
                 
                 for i in range(len(indices)):
                     for j in range(len(allintersections[indices[i]])):
-                        # green(indices[i])
-                        # red(allintersections[indices[i]])
-                        # yellow(allintersections[indices[i]][j])
-                        # cyan(allintersections[indices[i]][j][1]+1)
-                        # print(len(obsDic_xy[indices[i]].vert))
+                        green(indices[i])
+                        red(allintersections[indices[i]])
+                        yellow(allintersections[indices[i]][j])
+                        cyan(allintersections[indices[i]][j][1]+1)
+                        print(len(obsDic_xy[indices[i]].vert))
                         a = obsDic_xy[indices[i]].vert[allintersections[indices[i]][j][1]]
                         if len(obsDic_xy[indices[i]].vert) == (allintersections[indices[i]][j][1]+1):
                             b = obsDic_xy[indices[i]].vert[0]
@@ -352,16 +353,20 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
             segList = []                                           # empty list
             for index in range(len(intersectTab)):
                 segList.append(intersectTab[index][1])             # segList contains the smaller of the two obstacle indices defining the segment
-            #     yellow(segList[-1])
-            # green(segList)
+                yellow(segList[-1])
+            green(segList)
             # (B) re-sort obstacle segment list here, in order of first-encountered       
             segList = obsDic_xy[branch].resort(segList,parent,intersectTab)
 
+            # yellow(segList)
+            
             # (C) populate lists of left and right alternative waypoints
             # (make use of the fact that obstacle vertices are defined in clockwise order)
         
             altWptL = obsDic_xy[branch].leftalt(segList)
             altWptR = obsDic_xy[branch].rightalt(segList)
+            cyan(altWptL)
+            cyan(altWptR)
 
     #        altWptLclean = altWptL
     #        altWptRclean = altWptR
@@ -479,3 +484,5 @@ def det_path_planning(lat0, lon0, altitude, TAS, latdest, londest, inputObs):
     plt.show()
     
     return waypoint_latlon
+
+

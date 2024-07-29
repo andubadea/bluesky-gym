@@ -105,7 +105,7 @@ class Obs:
         
         # if obstacle vertices are not in clockwise order, make them so
         if not self.direction():
-            self.vert.reverse()        
+            self.vert.reverse()
         return
     def direction(self):
         directioncheck = 0        
@@ -119,20 +119,22 @@ class Obs:
     def intersectroute(self,routedef):
         intersectiontab = []
         (xwpts,ywpts) = list(zip(*routedef.waypoints))
+        # print(routedef.waypoints)
         for i in range(len(routedef.waypoints)-1):                     # iterate through all route segments
             a = Pos((xwpts[i],ywpts[i]))
             b = Pos((xwpts[i+1],ywpts[i+1]))
     
             for j in range(len(self.vert)):                         # iterate through obstacle segments
+                # red(j)
                 c = Pos((self.vert[j][0],self.vert[j][1]))
-                if j == (len(self.vert)-1): 
+                if j == (len(self.vert)-1):
+                    # green(j) 
                     d = Pos((self.vert[0][0],self.vert[0][1]))
                 else:
                     d = Pos((self.vert[j+1][0],self.vert[j+1][1]))
                 
                 if notcolinear(a,b,c,d) and intersect(a,b,c,d):
                     intersectiontab.append([i,j])                     # i corresponds to route segment and j corresponds to obstacle segment
-
         return intersectiontab
     def resort(self,segList,parent,intersectTab):
         # vertices of first segment in obstacle segment list:
@@ -260,74 +262,105 @@ class Obs:
         
     def rightalt(self,segList):
         altWptR = []                                               # waypoints along left alternative route
-        # (C) populate list of right alternative waypoints (make use of the fact that obstacle vertices are defined in clockwise order)
-        for i in range(len(segList)):
 
-            # make exception for last alternative waypoint to prevent "over-rotation" around obstacle
-            if i > 0 and  i == len(segList)-1:
-                if len(self.vert) == (segList[i]+1):
-                    if self.vert[0] not in altWptR:
-                        altWptR.append(self.vert[0])
-                else:
-                    if self.vert[segList[i]+1] not in altWptR:
-                        altWptR.append(self.vert[segList[i]+1])
-            elif (i == 0):
-                if self.vert[segList[i]] not in altWptR:
-                # append the smaller of the two vertices to the list of right alternative waypoints                   
-                    altWptR.append(self.vert[segList[i]])
-                if self.vert[-1] not in altWptR:
-                    altWptR.append(self.vert[-1])
-            else:
-                if self.vert[segList[i]] not in altWptR:
-                # append the smaller of the two vertices to the list of right alternative waypoints                   
-                    altWptR.append(self.vert[segList[i]])
-            # red(altWptR)
-        # (D) add additional obstacle vertices to list of right alternative waypoints, if necessary
-        # create empty lists:
-        indexRobs = []                                         # indices of obstacle vertices in altWptR
-        addR = []                                              # obstacle vertices to add to altWptR
-        # check for obstacle vertices in between consecutive altWptR entries
-        for i in range(len(altWptR)):
-            # populate list of indices of obstacle vertices in altWptR
-            indexRobs.append(self.vert.index(altWptR[i]))
-            # magenta(indexRobs)
-            # check if indices are consecutive; if not, need to evaluate further
-            if len(indexRobs)>=2 and abs(indexRobs[-1]-indexRobs[-2])%(len(self.vert)-1)>=2:
-            # note: total number of obstacle vertices is len(obs)-1 because last vertex is same as first
-                # define rngStp as difference between indices
-                if indexRobs[-1] > indexRobs[-2]:
-                    rngStp = len(self.vert)-indexRobs[-1]+indexRobs[-2]       # need to subtract 1!!!
-                else:
-                    rngStp = abs(indexRobs[-1]-indexRobs[-2])
-                # iterate through obstacle vertices between previous and current altWptR
-                for j in range(1,rngStp):
-                    # define a and c as previous and current altWptR positions, respectively
-                    a = Pos((altWptR[i-1][0],altWptR[i-1][1]))
-                    c = Pos((altWptR[i][0],altWptR[i][1]))
-                    # define b as "in-between" vertex position, taking into account possible indexing exceptions
-                    if self.vert.index(altWptR[i-1])==0:
-                        bInd = len(self.vert)-1
-                    else:
-                        bInd = self.vert.index(altWptR[i-1])
-                    if (bInd-j)<0:
-                        bArg = len(self.vert)-1+(bInd-j)
-                    else:
-                        bArg = bInd-j
-                    b = Pos((self.vert[bArg][0],self.vert[bArg][1]))
-                    # check direction of a,b,c sequence
-                    # append "in-between" vertex b to addR if direction is counterclockwise
-                    if ccw(a,b,c):
-                        addR.append(self.vert[bArg])
-    ##                    print 'added waypoint'
-    ##                else:
-    ##                    print 'no point added to altWptR'
-                # insert addR list into altWptR
-                for ii in range(len(addR)):
-                    altWptR.insert(i+ii,addR[ii])
-    ##        else:
-    ##            print 'altWptR are consecutive vertices of obs'      
-        # make sure there are no duplicates in altWptL
-        alt = duplicatefilter(altWptR)
+        index_start_vertex = segList[0]
+        print(segList)
+        if segList[1] == len(self.vert)-1:
+            index_closing_vertex = 0
+        else:
+            index_closing_vertex = segList[1]
+
+        if index_start_vertex == index_closing_vertex:
+            altWptR.append(self.vert[index_start_vertex])
+        elif index_start_vertex < index_closing_vertex:
+            for i in range(index_start_vertex, -1, -1):
+                altWptR.append(self.vert[i])
+            for i in range(len(self.vert)-1, index_closing_vertex+1, -1):
+                altWptR.append(self.vert[i])
+        else:
+            for i in range(index_start_vertex, index_closing_vertex+1, -1):
+                altWptR.append(self.vert[i])
+
+    #     # (C) populate list of right alternative waypoints (make use of the fact that obstacle vertices are defined in clockwise order)
+    #     for i in range(len(segList)):
+    #         red(i)
+    #         green(segList)
+    #         # make exception for last alternative waypoint to prevent "over-rotation" around obstacle
+    #         if i > 0 and i == len(segList)-1:
+    #             if len(self.vert) == (segList[i]+1):
+    #                 if self.vert[0] not in altWptR:
+    #                     altWptR.append(self.vert[0])
+    #             else:
+    #                 if self.vert[segList[i]+1] not in altWptR:
+    #                     altWptR.append(self.vert[segList[i]+1])
+    #         elif (i == 0):
+    #             red('WARNING!!!!!!!!!!!')
+    #             print(segList[i])
+    #             red(self.vert[segList[i]])
+    #             if self.vert[segList[i]] not in altWptR:
+    #             # append the smaller of the two vertices to the list of right alternative waypoints                   
+    #                 altWptR.append(self.vert[segList[i]])
+    #             green(segList[i])
+                
+    #         else:
+    #             red('WARNING!!!!!!!!!!!')
+    #             if self.vert[segList[i]] not in altWptR:
+    #             # append the smaller of the two vertices to the list of right alternative waypoints                   
+    #                 altWptR.append(self.vert[segList[i]])
+    #         # red(altWptR)
+    #         if segList[i] == 0:
+    #             if self.vert[-1] not in altWptR:
+    #                 altWptR.append(self.vert[-1])
+
+
+
+    #     # (D) add additional obstacle vertices to list of right alternative waypoints, if necessary
+    #     # create empty lists:
+    #     indexRobs = []                                         # indices of obstacle vertices in altWptR
+    #     addR = []                                              # obstacle vertices to add to altWptR
+    #     # check for obstacle vertices in between consecutive altWptR entries
+    #     for i in range(len(altWptR)):
+    #         # populate list of indices of obstacle vertices in altWptR
+    #         indexRobs.append(self.vert.index(altWptR[i]))
+    #         # magenta(indexRobs)
+    #         # check if indices are consecutive; if not, need to evaluate further
+    #         if len(indexRobs)>=2 and abs(indexRobs[-1]-indexRobs[-2])%(len(self.vert)-1)>=2:
+    #         # note: total number of obstacle vertices is len(obs)-1 because last vertex is same as first
+    #             # define rngStp as difference between indices
+    #             if indexRobs[-1] > indexRobs[-2]:
+    #                 rngStp = len(self.vert)-indexRobs[-1]+indexRobs[-2]       # need to subtract 1!!!
+    #             else:
+    #                 rngStp = abs(indexRobs[-1]-indexRobs[-2])
+    #             # iterate through obstacle vertices between previous and current altWptR
+    #             for j in range(1,rngStp):
+    #                 # define a and c as previous and current altWptR positions, respectively
+    #                 a = Pos((altWptR[i-1][0],altWptR[i-1][1]))
+    #                 c = Pos((altWptR[i][0],altWptR[i][1]))
+    #                 # define b as "in-between" vertex position, taking into account possible indexing exceptions
+    #                 if self.vert.index(altWptR[i-1])==0:
+    #                     bInd = len(self.vert)-1
+    #                 else:
+    #                     bInd = self.vert.index(altWptR[i-1])
+    #                 if (bInd-j)<0:
+    #                     bArg = len(self.vert)-1+(bInd-j)
+    #                 else:
+    #                     bArg = bInd-j
+    #                 b = Pos((self.vert[bArg][0],self.vert[bArg][1]))
+    #                 # check direction of a,b,c sequence
+    #                 # append "in-between" vertex b to addR if direction is counterclockwise
+    #                 if ccw(a,b,c):
+    #                     addR.append(self.vert[bArg])
+    # ##                    print 'added waypoint'
+    # ##                else:
+    # ##                    print 'no point added to altWptR'
+    #             # insert addR list into altWptR
+    #             for ii in range(len(addR)):
+    #                 altWptR.insert(i+ii,addR[ii])
+    # ##        else:
+    # ##            print 'altWptR are consecutive vertices of obs'      
+    #     # make sure there are no duplicates in altWptL
+    #     alt = duplicatefilter(altWptR)
+        alt = altWptR
         return alt
     def plotter(self,fig,number, sector_color):
         #create code sequence to draw obstacles (with flexible number of vertices)
