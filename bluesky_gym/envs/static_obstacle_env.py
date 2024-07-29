@@ -75,7 +75,7 @@ CENTER = (51.990426702297746, 4.376124857109851) # TU Delft AE Faculty coordinat
 
 MAX_DISTANCE = 350 # width of screen in km
 
-class StaticObstacleCREnv(gym.Env):
+class StaticObstacleEnv(gym.Env):
     """ 
     Static Obstacle Conflict Resolution Environment
 

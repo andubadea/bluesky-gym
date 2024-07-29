@@ -18,8 +18,8 @@ from scripts.common import logger
 
 bluesky_gym.register_envs()
 
-env_name = 'StaticObstacleCREnv-v0'
-algorithm = SAC
+env_name = 'StaticObstacleEnv-v0'
+algorithm = DDPG
 
 # Initialize logger
 log_dir = f'./logs/{env_name}/'
