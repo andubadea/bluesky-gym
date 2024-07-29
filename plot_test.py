@@ -10,7 +10,7 @@ def time_steps_per_episode(df):
     time_steps = df['timesteps'] - temp[:-1]
     return time_steps
 
-env = "StaticObstacleCREnv-v0"
+env = "StaticObstacleEnv-v0"
 ave_window = 500
 
 # drift01 = pd.read_csv(f'logs/{env}/drift01.csv')
