@@ -36,6 +36,7 @@ def gray(text):
 DISTANCE_MARGIN = 5 # km
 REACH_REWARD = 1 # reach set waypoint
 
+DRIFT_PENALTY_FLAG = False
 DRIFT_PENALTY = -0.01
 AC_INTRUSION_PENALTY = -5
 RESTRICTED_AREA_INTRUSION_PENALTY = -5
@@ -468,13 +469,17 @@ class StaticObstacleEnv(gym.Env):
         # new waypoints spawning continously
 
         reach_reward = self._check_waypoint()
-        drift_reward = self._check_drift()
+        
         # intrusion_other_ac_reward = self._check_intrusion_other_ac()
         intrusion_reward, intrusion_terminate = self._check_intrusion()
         
         # total_reward = reach_reward + drift_reward + intrusion_other_ac_reward + intrusion_reward
-        total_reward = reach_reward + drift_reward + intrusion_reward
-        
+        if DRIFT_PENALTY_FLAG:
+            drift_reward = self._check_drift()
+            total_reward = reach_reward + drift_reward + intrusion_reward
+        else:
+            total_reward = reach_reward + intrusion_reward
+
         done = 0
         if self.wpt_reach[0] == 1:
             done = 1
