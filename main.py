@@ -19,7 +19,7 @@ from scripts.common import logger
 bluesky_gym.register_envs()
 
 env_name = 'StaticObstacleEnv-v0'
-algorithm = SAC
+algorithm = PPO
 
 # Initialize logger
 log_dir = f'./logs/{env_name}/'

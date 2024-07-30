@@ -18,16 +18,23 @@ ave_window = 500
 # drift001int10 = pd.read_csv(f'logs/{env}/drift001int10.csv')
 # cont = pd.read_csv(f'logs/{env}/continue.csv')
 # test = pd.read_csv(f'logs/{env}/test.csv')
-sac = pd.read_csv(f'logs/{env}/{env}_SAC.csv')
+# sac = pd.read_csv(f'logs/{env}/{env}_SAC.csv')
+ppo = pd.read_csv(f'logs/{env}/{env}_PPO.csv')
 
-name = 'crashed'
+name = 'total_reward'
+#total_reward
+#crashed
+#waypoint_reached
+#average_drift
 
 # plt.plot(drift01['timesteps'][:-(ave_window-1)],moving_average(drift01[name],ave_window),label='drift01')
 # plt.plot(drift001['timesteps'][:-(ave_window-1)],moving_average(drift001[name],ave_window),label='drift001')
 # plt.plot(drift001int10['timesteps'][:-(ave_window-1)],moving_average(drift001int10[name],ave_window),label='drift001int10')
 # plt.plot(cont['timesteps'][:-(ave_window-1)],moving_average(cont[name],ave_window),label='cont')
 # plt.plot(test['timesteps'][:-(ave_window-1)],moving_average(test[name],ave_window),label='test')
-plt.plot(sac['timesteps'][:-(ave_window-1)],moving_average(sac[name],ave_window),label='sac')
+# plt.plot(sac['timesteps'][:-(ave_window-1)],moving_average(sac[name],ave_window),label='sac')
+plt.plot(ppo['timesteps'][:-(ave_window-1)],moving_average(ppo[name],ave_window),label='ppo')
+
 # ppo = pd.read_csv(f'logs/{env}/{env}_PPO.csv')
 # sac = pd.read_csv(f'logs/{env}/{env}_SAC.csv')
 # td3 = pd.read_csv(f'logs/{env}/{env}_TD3.csv')
