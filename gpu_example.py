@@ -97,12 +97,12 @@ if __name__ == "__main__":
                       device=device)
     if TRAIN:
         model.learn(total_timesteps=2e6, callback=csv_logger_callback)
-        model.save(f"models/{env_name}/{env_name}_{str(algorithm.__name__)}/model")
+        model.save(f"models/{env_name}/{env_name}_{str(algorithm.__name__)}/model_gpu")
         del model
     env.close()
     
     # Test the trained model
-    model = algorithm.load(f"models/{env_name}/{env_name}_{str(algorithm.__name__)}/model", env=env)
+    model = algorithm.load(f"models/{env_name}/{env_name}_{str(algorithm.__name__)}/model_gpu", env=env)
     env = gym.make(env_name, render_mode="human")
     for i in range(EVAL_EPISODES):
 
