@@ -1,6 +1,9 @@
 """
 This file is an example train and test loop for the different environments that
-uses the GPU for training alongside multiprocessing using vectorised envs.
+uses the GPU for training alongside multiprocessing using vectorised envs. 
+By default, stable-baselines3 should select the GPU as a device, but only if a 
+CUDA-capable GPU is present. This script also makes it possible to run the 
+training on MPS GPUs (Apple Silicon chipsets).
 Note that using the GPU for training does not always result in faster computation.
 This is highly dependent on the environment and algorithm combination. For
 simple environments, the extra overhead of copying information to/from the
